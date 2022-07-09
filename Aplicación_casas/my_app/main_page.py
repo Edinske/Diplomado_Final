@@ -253,7 +253,7 @@ with col1:
                     key_on='feature.properties.ZIPCODE',
                     columns=['zipcode', 'id'],
                     threshold_scale=custom_scale,
-                    fill_color='YlOrRd',
+                    fill_color='Purples',
                     highlight=True).add_to(mapa)
      folium_static(mapa)
 
@@ -268,7 +268,7 @@ with col2:
                     key_on='feature.properties.ZIPCODE',
                     columns=['zipcode', 'price'],
                     threshold_scale=custom_scale,
-                    fill_color='YlOrRd',
+                    fill_color='Purples',
                     highlight=True).add_to(mapa)
      folium_static(mapa)
 
@@ -285,7 +285,7 @@ with col1:
                     key_on='feature.properties.ZIPCODE',
                     columns=['zipcode', 'price/sqft'],
                     threshold_scale=custom_scale,
-                    fill_color='YlOrRd',
+                    fill_color='Purples',
                     highlight=True).add_to(mapa)
      folium_static(mapa)
 
@@ -316,7 +316,7 @@ maximo = pd.DataFrame(att_num.apply(np.max))
 minimo = pd.DataFrame(att_num.apply(np.min))
 df_EDA = pd.concat([minimo,media,mediana,maximo,std], axis = 1)
 df_EDA.columns = ['Mínimo','Media','Mediana','Máximo','std']
-st.header('Datos descriptivos')
+st.header('Datos descriptivos de las casas')
 df_EDA = df_EDA.drop(index =['id', 'lat', 'long','yr_built','yr_renovated'], axis = 0 )
 
 df_EDA.index =['Precio','No. Cuartos', 'No. Baños', 'Área construida (pies cuadrados)', 

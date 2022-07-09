@@ -15,7 +15,7 @@ from distutils.fancy_getopt   import OptionDummy
 
 
 
-st.set_page_config(page_title='App - Venta de casas',
+st.set_page_config(page_title='Venta de Casas en King',
                     layout="wide", 
                     page_icon=':house',  
                     initial_sidebar_state="expanded")
@@ -23,9 +23,24 @@ st.set_page_config(page_title='App - Venta de casas',
 
 
 
-st.title('Dinámica Inmobiliaria en King County')
-st.header('Propuesto por [Sébastien Lozano-Forero](https://www.linkedin.com/in/sebastienlozanoforero/)')
+st.title('Busqueda de Casas/Aptos')
+st.header('Propuesto por Edinske')
 
+def add_bg_from_url():
+    st.markdown(
+         f"""
+         <style>
+         .stApp {{
+             background-image: url("https://previews.123rf.com/images/ciarada/ciarada1506/ciarada150600005/41550839-bandera-de-los-estados-unidos-de-am%C3%A9rica-con-temas-de-fondo.jpg");
+             background-attachment: fixed;
+             background-size: cover
+         }}
+         </style>
+         """,
+         unsafe_allow_html=True
+     )
+
+add_bg_from_url() 
 
 # @st.cache
 def get_data():
@@ -35,7 +50,7 @@ def get_data():
 data = get_data()
 data_ref = data.copy()
 
-st.sidebar.markdown("# Parámetros")
+st.sidebar.markdown("# Parámetros/Filtros")
 data['date'] = pd.to_datetime(data['date'], format = '%Y-%m-%d').dt.date
 data['yr_built']= pd.to_datetime(data['yr_built'], format = '%Y').dt.year
 # data['yr_renovated'] = data['yr_renovated'].apply(lambda x: pd.to_datetime(x, format ='%Y') if x >0 else x )
@@ -62,10 +77,10 @@ data.loc[data['condition']<=2, 'condition_type'] = 'bad'
 data.loc[data['condition'].isin([3,4]), 'condition_type'] = 'regular'
 data.loc[data['condition']== 5, 'condition_type'] = 'good'
 
-data['price_tier'] = data['price'].apply(lambda x: 'Primer cuartil' if x <= 321950 else
-                                                   'Segundo cuartil' if (x > 321950) & (x <= 450000) else
-                                                   'Tercer cuartil' if (x > 450000) & (x <= 645000) else
-                                                   'Cuarto cuartil')
+data['price_tier'] = data['price'].apply(lambda x: '1er cuartil' if x <= 321950 else
+                                                   '2do cuartil' if (x > 321950) & (x <= 450000) else
+                                                   '3er cuartil' if (x > 450000) & (x <= 645000) else
+                                                   '4th cuartil')
 
 data['price/sqft'] = data['price']/data['sqft_living']
 
@@ -106,20 +121,20 @@ st.subheader('Filtros adicionales (Opcionales)')
 
 OptFiltro = st.multiselect(
      'Variables a incluir en los filtros:',
-     ['Habitaciones', 'Baños', 'Área construida (pies cuadrados)','Pisos','Vista al agua','Evaluación de la propiedad','Condición'],
-     ['Habitaciones', 'Baños'])
+     ['Cuartos', 'Baños', 'Área construida (pies cuadrados)','Pisos','Vista al agua','Evaluación de la propiedad','Condición'],
+     ['Cuartos', 'Baños'])
 
 
-if 'Habitaciones' in OptFiltro: 
+if 'Cuartos' in OptFiltro: 
      if data['bedrooms'].min() < data['bedrooms'].max():
           min_habs, max_habs = st.sidebar.select_slider(
-          'Número de Habitaciones',
+          'Número de Cuartos',
           options=list(sorted(set(data['bedrooms']))),
           value=(data['bedrooms'].min(),data['bedrooms'].max()))
           data = data[(data['bedrooms']>= min_habs)&(data['bedrooms']<= max_habs)]
      else:
           st.markdown("""
-               El filtro **Habitaciones** no es aplicable para la selección actual de valores
+               El filtro **Cuartos** no es aplicable para la selección actual de valores
                """)
 if 'Baños' in OptFiltro: 
      if data['bathrooms'].min() < data['bathrooms'].max():
@@ -187,6 +202,40 @@ if 'Condición' in OptFiltro:
           st.markdown("""
                El filtro **Condición** no es aplicable para la selección actual de valores
                """)
+
+st.header('Algunas tendencias')
+
+
+col1, col2 = st.columns(2)
+with col1: 
+     st.write('Evolución del precio por tipo de propiedad y año de construcción')
+     data['dormitory_type']=data['bedrooms'].apply(lambda x: 'Estudio' if x <=1 else 'Apartamento' if x==2 else 'Casa' )
+     df = data[['yr_built', 'price','dormitory_type']].groupby(['yr_built','dormitory_type']).mean().reset_index()
+     with sns.axes_style("darkgrid"):
+          plt.style.use('grayscale')
+          fig = plt.figure(figsize=(7,7)) # try different values
+          fig = sns.lineplot(x ='yr_built', y= 'price', data = df, hue="dormitory_type", style="dormitory_type")
+          fig.set_xlabel("Año de Construcción", fontsize = 17)
+          fig.set_ylabel("Precio (Millones de Dólares)", fontsize = 17)
+          fig.legend(title='Tipo de propiedad', loc='upper right', labels=['Apartamento', 'Casa','Estudio'])
+          fig = fig.figure
+          st.pyplot(fig)
+
+
+with col2: 
+     st.write('Evolución del precio por pie cuadrado por tipo de propiedad y año de construcción')
+     df = data[['yr_built', 'price/sqft','dormitory_type']].groupby(['yr_built','dormitory_type']).mean().reset_index()
+     with sns.axes_style("darkgrid"):
+          plt.style.use('grayscale')
+          fig = plt.figure(figsize=(7,7)) # try different values
+          fig = sns.lineplot(x ='yr_built', y= 'price/sqft', data = df, hue="dormitory_type", style="dormitory_type")
+          fig.set_xlabel("Año de Construcción", fontsize = 17)
+          fig.set_ylabel("Precio por pie cuadrado (Dólares)", fontsize = 17)
+          fig.legend(title='Tipo de propiedad', loc='upper right', labels=['Apartamento', 'Casa','Estudio'])
+          fig = fig.figure
+          st.pyplot(fig)
+
+
 
 # Mapas 
 
@@ -279,37 +328,4 @@ col1, col2 = st.columns(2)
 col1.metric("No. Casas", data.shape[0],str(100*round(data.shape[0]/data_ref.shape[0],4))+'% de las casas disponibles',delta_color="off")
 col2.metric("No. Casas Nuevas (Construida después de 1990)",data[data['house_age'] == 'new_house'].shape[0],str(100*round(data[data['house_age'] == 'new_house'].shape[0]/data_ref.shape[0],4))+'% de las casas disponibles',delta_color="off")
 st.dataframe(df_EDA)  
-
-st.header('Algunas tendencias')
-
-
-col1, col2 = st.columns(2)
-with col1: 
-     st.write('Evolución del precio por tipo de propiedad y año de construcción')
-     data['dormitory_type']=data['bedrooms'].apply(lambda x: 'Estudio' if x <=1 else 'Apartamento' if x==2 else 'Casa' )
-     df = data[['yr_built', 'price','dormitory_type']].groupby(['yr_built','dormitory_type']).mean().reset_index()
-     with sns.axes_style("darkgrid"):
-          plt.style.use('dark_background')
-          fig = plt.figure(figsize=(7,7)) # try different values
-          fig = sns.lineplot(x ='yr_built', y= 'price', data = df, hue="dormitory_type", style="dormitory_type")
-          fig.set_xlabel("Año de Construcción", fontsize = 17)
-          fig.set_ylabel("Precio (Millones de Dólares)", fontsize = 17)
-          fig.legend(title='Tipo de propiedad', loc='upper right', labels=['Apartamento', 'Casa','Estudio'])
-          fig = fig.figure
-          st.pyplot(fig)
-
-
-with col2: 
-     st.write('Evolución del precio por pie cuadrado por tipo de propiedad y año de construcción')
-     df = data[['yr_built', 'price/sqft','dormitory_type']].groupby(['yr_built','dormitory_type']).mean().reset_index()
-     with sns.axes_style("darkgrid"):
-          plt.style.use('dark_background')
-          fig = plt.figure(figsize=(7,7)) # try different values
-          fig = sns.lineplot(x ='yr_built', y= 'price/sqft', data = df, hue="dormitory_type", style="dormitory_type")
-          fig.set_xlabel("Año de Construcción", fontsize = 17)
-          fig.set_ylabel("Precio por pie cuadrado (Dólares)", fontsize = 17)
-          fig.legend(title='Tipo de propiedad', loc='upper right', labels=['Apartamento', 'Casa','Estudio'])
-          fig = fig.figure
-          st.pyplot(fig)
-
 
